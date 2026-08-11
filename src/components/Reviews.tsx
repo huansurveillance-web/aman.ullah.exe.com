@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Star, MessageSquareText, Send, CheckCircle2 } from "lucide-react";
-import { db, isFirebaseConfigured } from "../firebase";
+import { rtdb, isFirebaseConfigured } from "../firebase";
 import { SAMPLE_REVIEWS, type Review } from "../data";
 import {
-  collection,
-  addDoc,
-  onSnapshot,
-  orderBy,
+  ref,
+  push,
+  onValue,
   query,
-  limit,
+  orderByChild,
+  limitToLast,
   serverTimestamp,
-} from "firebase/firestore";
+} from "firebase/database";
 
 const StarRow: React.FC<{ rating: number; size?: string }> = ({ rating, size = "h-4 w-4" }) => (
   <div className="flex items-center gap-0.5">
@@ -47,21 +47,23 @@ export const Reviews: React.FC = () => {
 
   // Live-sync with every visitor as soon as Firebase is configured.
   useEffect(() => {
-    if (!db) return;
-    const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"), limit(30));
-    const unsubscribe = onSnapshot(
-      q,
+    if (!rtdb) return;
+    const reviewsQuery = query(ref(rtdb, "reviews"), orderByChild("createdAt"), limitToLast(30));
+    const unsubscribe = onValue(
+      reviewsQuery,
       (snapshot) => {
-        const live: Review[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as any;
-          return {
-            id: doc.id,
+        const live: Review[] = [];
+        snapshot.forEach((child) => {
+          const data = child.val();
+          live.push({
+            id: child.key as string,
             name: data.name,
             rating: data.rating,
             comment: data.comment,
-            createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
-          };
+            createdAt: typeof data.createdAt === "number" ? data.createdAt : Date.now(),
+          });
         });
+        live.reverse(); // newest first
         setReviews(live.length > 0 ? live : SAMPLE_REVIEWS);
       },
       () => setReviews(SAMPLE_REVIEWS)
@@ -78,14 +80,14 @@ export const Reviews: React.FC = () => {
     e.preventDefault();
     setError("");
 
-    if (!db) {
+    if (!rtdb) {
       setError("Review submissions will open shortly. Please check back soon.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "reviews"), {
+      await push(ref(rtdb, "reviews"), {
         name: name.trim(),
         rating,
         comment: comment.trim(),
