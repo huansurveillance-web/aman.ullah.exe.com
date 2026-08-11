@@ -1,0 +1,7 @@
+{
+  "name": "HUAN Surveillance",
+  "description": "Pakistan-based premium security and surveillance solutions provider specializing in professional CCTV, IP cameras, access control, and full low-voltage infrastructure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

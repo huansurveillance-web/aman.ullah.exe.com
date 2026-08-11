@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      // Fix for "Uncaught TypeError: Cannot set property fetch of #<Window> which has only a getter"
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          if (originalFetch) {
+            var desc = Object.getOwnPropertyDescriptor(window, 'fetch') || Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window), 'fetch');
+            if (desc && !desc.set) {
+              Object.defineProperty(window, 'fetch', {
+                get: function() {
+                  return originalFetch;
+                },
+                set: function(val) {
+                  originalFetch = val;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[Fetch Patch] Failed to override fetch setter:", e);
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>HUAN Surveillance | Professional CCTV & Security Solutions</title>
+    <meta name="description" content="Pakistan-based premium security and surveillance solutions provider specializing in professional CCTV, IP cameras, access control, and full low-voltage infrastructure." />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
